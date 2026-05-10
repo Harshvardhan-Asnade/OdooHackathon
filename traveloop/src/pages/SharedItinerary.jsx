@@ -9,6 +9,7 @@ export default function SharedItinerary() {
   const { id } = useParams();
   const { getTripById, itineraries } = useTravelPlanner();
   const trip = getTripById(id);
+  if (!trip) return <div>Trip not found</div>;
   const data = itineraries[trip.id] || { sections: [] };
 
   const handleCopy = () => alert('Trip copied to your account!');

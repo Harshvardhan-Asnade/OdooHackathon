@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, DollarSign, TrendingUp, Plus, Globe, Sparkles, CloudSun } from 'lucide-react';
 import { destinationCatalog } from '../data/mockData';
 import { useTravelPlanner } from '../context/useTravelPlanner';
@@ -9,11 +10,12 @@ const regionFilters = ['All', 'Europe', 'Asia', 'North America', 'South America'
 const costFilters = ['All', 'Low', 'Medium', 'High', 'Very High'];
 
 export default function CitySearch() {
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [regionFilter, setRegionFilter] = useState('All');
   const [costFilter, setCostFilter] = useState('All');
   const [added, setAdded] = useState({});
-  const { profile } = useTravelPlanner();
+  const { createTrip, profile, trips, updateTrip } = useTravelPlanner();
   const cities = destinationCatalog.map((city) => ({
     ...city,
     aiFit: Math.min(99, 58 + city.tags.filter((tag) => profile.interests.some((interest) => tag.toLowerCase().includes(interest.toLowerCase()))).length * 13 + Math.round(city.rating * 4)),
@@ -27,6 +29,35 @@ export default function CitySearch() {
   }).sort((a, b) => b.aiFit - a.aiFit);
 
   const costColors = { 'Low': 'var(--sage)', 'Medium': 'var(--gold)', 'High': 'var(--terracotta)', 'Very High': 'var(--error)' };
+
+  async function handleAddToTrip(city) {
+    if (added[city.id]) return;
+    const planningTrip = trips.find((trip) => trip.status === 'planning') || trips[0];
+
+    if (planningTrip) {
+      const nextCities = Array.from(new Set([...(planningTrip.cities || []), city.name]));
+      await updateTrip(planningTrip.id, { cities: nextCities, optimizationScore: 90 });
+      setAdded((prev) => ({ ...prev, [city.id]: planningTrip.id }));
+      return;
+    }
+
+    const start = new Date();
+    const end = new Date(start);
+    end.setDate(end.getDate() + 3);
+    const newTrip = await createTrip({
+      name: `${city.name} Discovery`,
+      place: city.name,
+      startDate: start.toISOString().slice(0, 10),
+      endDate: end.toISOString().slice(0, 10),
+      travelers: [profile.firstName],
+      interests: profile.interests,
+      totalBudget: city.avgDailyBudget * 4,
+      description: city.description,
+      budgetTier: 'Comfort',
+    });
+    setAdded((prev) => ({ ...prev, [city.id]: newTrip.id }));
+    navigate(`/trips/${newTrip.id}/itinerary/build`);
+  }
 
   return (
     <div className="page-content">
@@ -78,7 +109,6 @@ export default function CitySearch() {
                   minHeight: '140px'
                 }}
               >
-                <span className="city-emoji-lg" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>{city.emoji}</span>
                 <div className="city-popularity" style={{ color: 'white' }}>
                   <TrendingUp size={12} /> {city.popularity}
                 </div>
@@ -97,9 +127,9 @@ export default function CitySearch() {
                   </span>
                   <button
                     className={`btn btn-sm ${added[city.id] ? 'btn-teal' : 'btn-primary'}`}
-                    onClick={() => setAdded(prev => ({ ...prev, [city.id]: !prev[city.id] }))}
+                    onClick={() => handleAddToTrip(city)}
                   >
-                    {added[city.id] ? '✓ Added' : <><Plus size={14} /> <span>Add to Trip</span></>}
+                    {added[city.id] ? '✓ Added to trip' : <><Plus size={14} /> <span>Add to Trip</span></>}
                   </button>
                 </div>
               </div>

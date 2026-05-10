@@ -10,6 +10,7 @@ export default function ItineraryView() {
   const { id } = useParams();
   const { getTripById, itineraries, profile } = useTravelPlanner();
   const trip = getTripById(id);
+  if (!trip) return <div>Trip not found</div>;
   const data = itineraries[trip.id] || { sections: [] };
   const generatedDays = createDayWiseItinerary(trip, profile);
   const hasSavedDays = data.sections.some((section) => section.days?.length);

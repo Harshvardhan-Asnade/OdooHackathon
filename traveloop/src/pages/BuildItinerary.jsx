@@ -84,7 +84,9 @@ export default function BuildItinerary() {
   const generatedRef = useRef(false);
   const { getTripById, itineraries, profile, updateItinerary, updateTrip } = useTravelPlanner();
   const trip = getTripById(id);
-  const [sections, setSections] = useState(() => makeInitialSections(trip, itineraries[trip.id]));
+  const [sections, setSections] = useState(() => (
+    trip ? makeInitialSections(trip, itineraries[trip.id]) : []
+  ));
   const [showCityPicker, setShowCityPicker] = useState(false);
   const [citySearch, setCitySearch] = useState('');
   const [dragIndex, setDragIndex] = useState(null);
@@ -92,9 +94,13 @@ export default function BuildItinerary() {
   const [aiNotes, setAiNotes] = useState([]);
 
   const totalBudget = sections.reduce((sum, section) => sum + (Number(section.budget) || 0), 0);
-  const routeTrip = useMemo(() => ({ ...trip, cities: sections.map((section) => section.city) }), [sections, trip]);
+  const routeTrip = useMemo(
+    () => (trip ? { ...trip, cities: sections.map((section) => section.city) } : null),
+    [sections, trip],
+  );
 
   useEffect(() => {
+    if (!trip) return;
     if (!isAI || generatedRef.current) return;
     generatedRef.current = true;
     handleAIGenerate();
@@ -171,6 +177,7 @@ export default function BuildItinerary() {
   }
 
   async function handleAIGenerate() {
+    if (!routeTrip) return;
     setAiLoading(true);
     const result = await generateItineraryPlan({
       trip: routeTrip,
@@ -207,6 +214,7 @@ export default function BuildItinerary() {
   }
 
   function handleSave() {
+    if (!trip) return;
     const cities = sections.map((section) => section.city);
     updateTrip(trip.id, {
       cities,
@@ -224,6 +232,8 @@ export default function BuildItinerary() {
       .map((city) => current.find((section) => section.city === city))
       .filter(Boolean));
   }
+
+  if (!trip) return <div>Trip not found</div>;
 
   return (
     <div className="page-content">

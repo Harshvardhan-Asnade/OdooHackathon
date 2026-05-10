@@ -76,7 +76,6 @@ export default function MyTrips() {
                   backgroundPosition: 'center'
                 }}
               >
-                <span className="mytrip-emoji" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>{trip.coverEmoji}</span>
               </div>
               <div className="mytrip-body">
                 <div className="mytrip-top">

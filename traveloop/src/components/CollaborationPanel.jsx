@@ -1,14 +1,31 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, CircleDollarSign, Copy, Link2, MessageSquare, Send, Users } from 'lucide-react';
 import { collaborators, expenseSplits } from '../data/mockData';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { useTravelPlanner } from '../context/useTravelPlanner';
 
 export default function CollaborationPanel({ trip }) {
+  const { profile } = useTravelPlanner();
   const [invite, setInvite] = useState('');
   const [activity, setActivity] = useState([
     `${trip?.lastEditedBy || 'Cristina'} updated the itinerary sequence`,
     'AI moved outdoor Rome activities before the heat window',
     'Arjun added two hotel shortlist notes',
   ]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !trip?.id) return;
+    
+    const channel = supabase.channel(`trip-${trip.id}`);
+    
+    channel.on('broadcast', { event: 'activity' }, ({ payload }) => {
+      setActivity(current => [payload.message, ...current]);
+    }).subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [trip?.id]);
 
   const balances = useMemo(() => {
     const totals = {};
@@ -25,7 +42,18 @@ export default function CollaborationPanel({ trip }) {
   function sendInvite(event) {
     event.preventDefault();
     if (!invite.trim()) return;
-    setActivity((current) => [`Invite sent to ${invite.trim()}`, ...current]);
+    
+    const message = `Invite sent to ${invite.trim()}`;
+    setActivity((current) => [message, ...current]);
+    
+    if (isSupabaseConfigured && trip?.id) {
+      supabase.channel(`trip-${trip.id}`).send({
+        type: 'broadcast',
+        event: 'activity',
+        payload: { message: `${profile?.firstName || 'Someone'} invited ${invite.trim()}` }
+      });
+    }
+    
     setInvite('');
   }
 

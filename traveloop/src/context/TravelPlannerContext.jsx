@@ -294,7 +294,7 @@ export function TravelPlannerProvider({ children }) {
   }
 
   function getTripById(tripId) {
-    return trips.find((trip) => trip.id === tripId) || trips[0];
+    return trips.find((trip) => trip.id === tripId);
   }
 
   const value = {

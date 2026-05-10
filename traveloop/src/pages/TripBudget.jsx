@@ -10,9 +10,9 @@ export default function TripBudget() {
   const { id } = useParams();
   const { getTripById } = useTravelPlanner();
   const trip = getTripById(id);
-  const estimated = estimateTripBudget(trip);
-  const spent = trip.totalSpent;
-  const budget = trip.totalBudget || estimated.total;
+  const estimated = trip ? estimateTripBudget(trip) : { total: 0, dailyBase: 0, categories: [], suggestions: [] };
+  const spent = trip?.totalSpent || 0;
+  const budget = (trip?.totalBudget || 0) || estimated.total;
   const remaining = budget - spent;
   const isOver = remaining < 0;
   const pct = Math.min((spent / budget) * 100, 100);
@@ -20,6 +20,7 @@ export default function TripBudget() {
   const [showAI, setShowAI] = useState(false);
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState(estimated.suggestions.map((suggestion) => ({ ...suggestion, accepted: false })));
+  if (!trip) return <div>Trip not found</div>;
 
   const handleAIAnalyze = () => {
     setLoading(true);

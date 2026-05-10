@@ -129,7 +129,6 @@ export default function Dashboard() {
                   minHeight: '200px'
                 }}
               >
-                <div className="region-emoji-wrap" style={{ '--accent': region.color, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }}><span className="region-emoji-v2">{region.image}</span></div>
                 <div className="region-label"><span className="region-name-v2" style={{ color: 'white' }}>{region.name}</span><ArrowUpRight size={13} className="region-arrow" style={{ color: 'white' }} /></div>
               </Link>
             ))}
@@ -153,7 +152,6 @@ export default function Dashboard() {
                     backgroundPosition: 'center'
                   }}
                 >
-                  <span className="trip-emoji-v2" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>{trip.coverEmoji}</span>
                   <div className="trip-badge" style={{ background: statusColors[trip.status].bg, color: statusColors[trip.status].text }}>{trip.status}</div>
                 </div>
                 <div className="trip-content">

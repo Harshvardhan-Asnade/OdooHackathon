@@ -4,13 +4,29 @@ import { ArrowLeft, Download, FileText, CheckCircle, DollarSign } from 'lucide-r
 import { Link, useParams } from 'react-router-dom';
 import './Pages.css';
 
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+
 export default function Invoice() {
   const { id } = useParams();
   const { getTripById } = useTravelPlanner();
   const trip = getTripById(id);
   const inv = invoiceData;
 
+  const exportPDF = async () => {
+    const element = document.getElementById('invoice-card');
+    if (!element || !trip) return;
+    const canvas = await html2canvas(element, { scale: 2 });
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`Invoice_${trip.name.replace(/\s+/g, '_')}.pdf`);
+  };
+
   if (!trip) return <div>Trip not found</div>;
+  const spentPct = trip.totalBudget > 0 ? (trip.totalSpent / trip.totalBudget) * 100 : 0;
 
   return (
     <div className="page-content">
@@ -19,10 +35,9 @@ export default function Invoice() {
 
         <div className="invoice-layout">
           <div className="invoice-main animate-in animate-in-delay-1">
-            <div className="card">
+            <div className="card" id="invoice-card">
               <div className="invoice-top">
                 <div className="invoice-trip">
-                  <span style={{fontSize:40}}>{trip.coverEmoji}</span>
                   <div>
                     <h3>{trip.name}</h3>
                     <p>{trip.startDate} — {trip.endDate} · {trip.cities.length} cities</p>
@@ -54,9 +69,9 @@ export default function Invoice() {
                 </tfoot>
               </table>
 
-              <div className="invoice-actions">
-                <button className="btn btn-secondary"><Download size={16} /> Download</button>
-                <button className="btn btn-secondary"><FileText size={16} /> Export PDF</button>
+              <div className="invoice-actions" data-html2canvas-ignore>
+                <button className="btn btn-secondary" onClick={() => window.print()}><Download size={16} /> Print</button>
+                <button className="btn btn-secondary" onClick={exportPDF}><FileText size={16} /> Export PDF</button>
                 <button className="btn btn-primary"><CheckCircle size={16} /> Mark as Paid</button>
               </div>
             </div>
@@ -69,7 +84,7 @@ export default function Invoice() {
                 <svg viewBox="0 0 100 100" className="ring-svg">
                   <circle cx="50" cy="50" r="40" fill="none" stroke="var(--sand)" strokeWidth="12"/>
                   <circle cx="50" cy="50" r="40" fill="none" stroke="var(--terracotta)" strokeWidth="12"
-                    strokeDasharray={`${(trip.totalSpent/trip.totalBudget*100)*2.51} 251`}
+                    strokeDasharray={`${spentPct * 2.51} 251`}
                     strokeLinecap="round" transform="rotate(-90 50 50)"/>
                 </svg>
               </div>

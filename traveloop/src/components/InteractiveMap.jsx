@@ -8,25 +8,19 @@ import {
   optimizeRoute,
 } from '../lib/plannerEngine';
 import { useTravelPlanner } from '../context/useTravelPlanner';
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
-function buildMapPoints(stops) {
-  if (!stops.length) return [];
-  const lats = stops.map((stop) => stop.lat);
-  const lngs = stops.map((stop) => stop.lng);
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs);
-  const maxLng = Math.max(...lngs);
-  const latRange = Math.max(maxLat - minLat, 1);
-  const lngRange = Math.max(maxLng - minLng, 1);
-
-  return stops.map((stop, index) => ({
-    ...stop,
-    x: 12 + ((stop.lng - minLng) / lngRange) * 76,
-    y: 82 - ((stop.lat - minLat) / latRange) * 64,
-    order: index + 1,
-  }));
-}
+let DefaultIcon = L.icon({
+    iconUrl: icon,
+    shadowUrl: iconShadow,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41]
+});
+L.Marker.prototype.options.icon = DefaultIcon;
 
 export default function InteractiveMap({ trip, onRouteChange }) {
   const { profile } = useTravelPlanner();
@@ -34,14 +28,11 @@ export default function InteractiveMap({ trip, onRouteChange }) {
   const [selectedCity, setSelectedCity] = useState(stops[0]?.name || trip?.cities?.[0]);
   const [dragIndex, setDragIndex] = useState(null);
 
-  const mapStops = useMemo(() => buildMapPoints(stops), [stops]);
   const routeSummary = useMemo(() => calculateRouteSummary(stops), [stops]);
   const recommendations = useMemo(
     () => getPersonalizedRecommendations(profile, { ...trip, cities: [selectedCity] }).slice(0, 4),
     [profile, selectedCity, trip],
   );
-
-  const path = mapStops.map((stop) => `${stop.x},${stop.y}`).join(' ');
 
   const nearby = recommendations.length ? recommendations : destinationCatalog
     .filter((destination) => destination.name !== selectedCity)
@@ -73,6 +64,19 @@ export default function InteractiveMap({ trip, onRouteChange }) {
     onRouteChange?.(next);
   }
 
+  // Compute bounds for the Leaflet map
+  const bounds = useMemo(() => {
+    if (!stops.length) return null;
+    const lats = stops.map(s => s.lat);
+    const lngs = stops.map(s => s.lng);
+    return [
+      [Math.min(...lats) - 1, Math.min(...lngs) - 1],
+      [Math.max(...lats) + 1, Math.max(...lngs) + 1]
+    ];
+  }, [stops]);
+
+  const polylinePositions = stops.map(s => [s.lat, s.lng]);
+
   if (!stops.length) {
     return (
       <div className="smart-map empty-map">
@@ -84,32 +88,24 @@ export default function InteractiveMap({ trip, onRouteChange }) {
 
   return (
     <div className="smart-map">
-      <div className="smart-map-canvas">
-        <svg viewBox="0 0 100 100" role="img" aria-label="Interactive route map">
-          <defs>
-            <linearGradient id="routeGlow" x1="0%" x2="100%">
-              <stop offset="0%" stopColor="var(--terracotta)" />
-              <stop offset="55%" stopColor="var(--gold)" />
-              <stop offset="100%" stopColor="var(--teal)" />
-            </linearGradient>
-          </defs>
-          <path className="map-grid-line" d="M8 25 C30 16 62 18 92 12" />
-          <path className="map-grid-line" d="M4 62 C28 48 56 68 96 54" />
-          <path className="map-grid-line" d="M20 8 C24 30 18 58 30 92" />
-          <path className="map-grid-line" d="M68 4 C62 32 74 58 70 96" />
-          <polyline className="route-line-shadow" points={path} />
-          <polyline className="route-line" points={path} />
-          {mapStops.map((stop) => (
-            <g
-              key={stop.id}
-              className={`route-marker ${selectedCity === stop.name ? 'active' : ''}`}
-              onClick={() => setSelectedCity(stop.name)}
-            >
-              <circle cx={stop.x} cy={stop.y} r="4.9" />
-              <text x={stop.x} y={stop.y + 1.2} textAnchor="middle">{stop.order}</text>
-            </g>
-          ))}
-        </svg>
+      <div className="smart-map-canvas" style={{ zIndex: 0 }}>
+        {bounds && (
+          <MapContainer bounds={bounds} style={{ height: '100%', minHeight: '420px', width: '100%', borderRadius: 'var(--radius-xl)' }}>
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            />
+            <Polyline positions={polylinePositions} color="var(--terracotta)" weight={3} dashArray="5, 10" />
+            {stops.map((stop, index) => (
+              <Marker key={stop.id} position={[stop.lat, stop.lng]}>
+                <Popup>
+                  <strong>{stop.name}</strong><br/>
+                  Stop {index + 1}
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+        )}
         <div className="map-floating-panel">
           <div>
             <span className="mini-label">Route distance</span>

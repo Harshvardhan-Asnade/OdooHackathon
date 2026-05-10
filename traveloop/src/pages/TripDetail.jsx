@@ -12,10 +12,9 @@ export default function TripDetail() {
   const { id } = useParams();
   const { getTripById, itineraries } = useTravelPlanner();
   const trip = getTripById(id);
+  if (!trip) return <div>Trip not found</div>;
   const itinerary = itineraries[trip.id] || { sections: [] };
   const remaining = trip.totalBudget - trip.totalSpent;
-
-  if (!trip) return <div>Trip not found</div>;
 
   return (
     <div className="page-content">
@@ -29,10 +28,9 @@ export default function TripDetail() {
               backgroundPosition: 'center'
             }}
           >
-            <span style={{ fontSize: 72, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>{trip.coverEmoji}</span>
           </div>
           <div className="trip-detail-info">
-            <div className="trip-status status-upcoming">{trip.status}</div>
+            <div className={`trip-status status-${trip.status}`}>{trip.status}</div>
             <h1>{trip.name}</h1>
             <div className="trip-detail-meta">
               <span><MapPin size={15} /> {trip.cities.join(' → ')}</span>
