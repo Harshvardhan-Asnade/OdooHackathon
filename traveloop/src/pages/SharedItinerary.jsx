@@ -1,10 +1,15 @@
-import { Calendar, MapPin, Clock, DollarSign, Copy, Share2, Globe } from 'lucide-react';
-import { trips, itineraries } from '../data/mockData';
+import { useParams } from 'react-router-dom';
+import { Calendar, MapPin, Clock, DollarSign, Copy, Share2, Globe, Users } from 'lucide-react';
+import CollaborationPanel from '../components/CollaborationPanel';
+import InteractiveMap from '../components/InteractiveMap';
+import { useTravelPlanner } from '../context/useTravelPlanner';
 import './Pages.css';
 
 export default function SharedItinerary() {
-  const trip = trips[0];
-  const data = itineraries.t1;
+  const { id } = useParams();
+  const { getTripById, itineraries } = useTravelPlanner();
+  const trip = getTripById(id);
+  const data = itineraries[trip.id] || { sections: [] };
 
   const handleCopy = () => alert('Trip copied to your account!');
   const handleShare = () => {
@@ -22,7 +27,7 @@ export default function SharedItinerary() {
         {/* Public banner */}
         <div className="shared-banner animate-in">
           <Globe size={16} />
-          <span>Public Itinerary · Anyone with the link can view</span>
+          <span>Collaborative itinerary · Shared access: {trip.sharedAccess}</span>
         </div>
 
         {/* Trip Header */}
@@ -33,12 +38,17 @@ export default function SharedItinerary() {
             <span><MapPin size={14} /> {trip.cities.join(' → ')}</span>
             <span><Calendar size={14} /> {trip.startDate} — {trip.endDate}</span>
             <span><DollarSign size={14} /> Budget: ${trip.totalBudget.toLocaleString()}</span>
+            <span><Users size={14} /> {trip.travelers.length} travelers</span>
           </div>
           <p className="shared-by">Created by <strong>{trip.createdBy}</strong> · {trip.travelers.length} travelers</p>
           <div className="shared-actions">
             <button className="btn btn-primary" onClick={handleCopy}><Copy size={14} /> <span>Copy This Trip</span></button>
             <button className="btn btn-secondary" onClick={handleShare}><Share2 size={14} /> Share</button>
           </div>
+        </div>
+
+        <div className="section animate-in animate-in-delay-2">
+          <InteractiveMap trip={trip} />
         </div>
 
         {/* Read-only Itinerary */}
@@ -84,6 +94,8 @@ export default function SharedItinerary() {
           <p>Love this itinerary? Make it yours!</p>
           <button className="btn btn-primary" onClick={handleCopy}><Copy size={14} /> <span>Copy Trip to My Account</span></button>
         </div>
+
+        <CollaborationPanel trip={trip} />
       </div>
     </div>
   );

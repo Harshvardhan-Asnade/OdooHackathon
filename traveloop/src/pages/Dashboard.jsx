@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, SlidersHorizontal, Plus, MapPin, Calendar, Users, ArrowRight, Sparkles, ArrowUpRight, DollarSign, TrendingUp } from 'lucide-react';
-import { regions, trips, currentUser } from '../data/mockData';
+import { Search, SlidersHorizontal, Plus, MapPin, Calendar, ArrowRight, Sparkles, ArrowUpRight, DollarSign, TrendingUp, CloudSun, Route } from 'lucide-react';
+import { regions } from '../data/mockData';
+import SmartInsights from '../components/SmartInsights';
+import WeatherPanel from '../components/WeatherPanel';
+import { useTravelPlanner } from '../context/useTravelPlanner';
 import './Dashboard.css';
 
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
+  const { profile, trips } = useTravelPlanner();
 
   const statusColors = {
     upcoming: { bg: 'var(--terracotta)', text: '#fff' },
@@ -15,6 +19,14 @@ export default function Dashboard() {
 
   const totalBudget = trips.reduce((s, t) => s + t.totalBudget, 0);
   const totalSpent = trips.reduce((s, t) => s + t.totalSpent, 0);
+  const featuredTrip = trips[0];
+  const searchedTrips = trips.filter((trip) => {
+    const query = searchQuery.toLowerCase();
+    if (!query) return true;
+    return trip.name.toLowerCase().includes(query)
+      || trip.cities.some((city) => city.toLowerCase().includes(query))
+      || trip.interests?.some((interest) => interest.toLowerCase().includes(query));
+  });
 
   return (
     <div className="page-content">
@@ -25,9 +37,9 @@ export default function Dashboard() {
             <div className="hero-eyebrow"><span className="eyebrow-dot" /> Welcome back</div>
             <h1 className="hero-title">
               Hello,<br />
-              <span className="hero-accent">{currentUser.firstName}</span> 👋
+              <span className="hero-accent">{profile.firstName}</span>
             </h1>
-            <p className="hero-subtitle">Plan, explore, and share unforgettable travel experiences with people who get it.</p>
+            <p className="hero-subtitle">Plan, optimize, budget, and collaborate on travel plans with AI that understands your style.</p>
             <Link to="/trips/new" className="hero-cta">Start Planning <ArrowUpRight size={18} /></Link>
           </div>
           <div className="hero-right">
@@ -58,6 +70,16 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {featuredTrip && (
+          <section className="section animate-in animate-in-delay-2">
+            <div className="section-header">
+              <div><h2>AI Planning Command Center</h2><p className="section-sub">Budget, route, weather, and recommendation intelligence for {featuredTrip.name}</p></div>
+              <Link to={`/trips/${featuredTrip.id}`} className="section-link">Open trip <ArrowRight size={15} /></Link>
+            </div>
+            <SmartInsights trip={featuredTrip} />
+          </section>
+        )}
+
         {/* Search */}
         <div className="search-wrap animate-in animate-in-delay-2">
           <div className="search-bar-v2">
@@ -66,6 +88,26 @@ export default function Dashboard() {
             <button className="search-filter-btn"><SlidersHorizontal size={14} /> Filters</button>
           </div>
         </div>
+
+        {featuredTrip && (
+          <div className="dashboard-live-grid animate-in animate-in-delay-3">
+            <div className="live-stat-card">
+              <CloudSun size={18} />
+              <span>Weather routing</span>
+              <strong>{featuredTrip.weatherScore || 84}% safe</strong>
+            </div>
+            <div className="live-stat-card">
+              <Route size={18} />
+              <span>Route optimization</span>
+              <strong>{featuredTrip.optimizationScore || 80}% efficient</strong>
+            </div>
+            <div className="live-stat-card">
+              <Sparkles size={18} />
+              <span>AI usage</span>
+              <strong>+18% this week</strong>
+            </div>
+          </div>
+        )}
 
         {/* Recommended Destinations */}
         <section className="section animate-in animate-in-delay-3">
@@ -90,7 +132,7 @@ export default function Dashboard() {
             <Link to="/trips" className="section-link">View all <ArrowRight size={15} /></Link>
           </div>
           <div className="trips-grid-v2">
-            {trips.map((trip, i) => (
+            {searchedTrips.map((trip, i) => (
               <Link to={`/trips/${trip.id}`} key={trip.id} className={`trip-card-v2 ${i === 0 ? 'trip-featured' : ''} animate-in animate-in-delay-${Math.min(i + 5, 8)}`}>
                 <div className="trip-visual">
                   <span className="trip-emoji-v2">{trip.coverEmoji}</span>
@@ -111,6 +153,15 @@ export default function Dashboard() {
             ))}
           </div>
         </section>
+
+        {featuredTrip && (
+          <section className="section animate-in animate-in-delay-6">
+            <div className="section-header">
+              <div><h2>Real-Time Trip Signals</h2><p className="section-sub">Weather and travel alerts that feed the AI optimizer</p></div>
+            </div>
+            <WeatherPanel trip={featuredTrip} />
+          </section>
+        )}
 
         <Link to="/trips/new" className="fab-v2"><Plus size={20} strokeWidth={2.5} /></Link>
       </div>

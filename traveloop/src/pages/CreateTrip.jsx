@@ -1,31 +1,57 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, FileText, Image, Sparkles, ArrowRight } from 'lucide-react';
+import { Calendar, MapPin, FileText, Image, Sparkles, ArrowRight, DollarSign, Users } from 'lucide-react';
+import { destinationCatalog } from '../data/mockData';
+import { useTravelPlanner } from '../context/useTravelPlanner';
 import './Pages.css';
 
 export default function CreateTrip() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', place: '', startDate: '', endDate: '', description: '', coverEmoji: '🌍' });
+  const { createTrip, profile } = useTravelPlanner();
+  const [form, setForm] = useState({
+    name: '',
+    place: '',
+    startDate: '',
+    endDate: '',
+    description: '',
+    coverEmoji: '🌍',
+    totalBudget: profile.preferredBudget || 4200,
+    budgetTier: 'Comfort',
+    travelers: [profile.firstName],
+    interests: profile.interests || ['Food', 'History'],
+  });
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleCreate = (ai = false) => {
+    const trip = createTrip(form);
+    navigate(`/trips/${trip.id}/itinerary/build${ai ? '?ai=true' : ''}`);
+  };
 
   const handleAIGenerate = () => {
     setIsGenerating(true);
     setTimeout(() => {
       setIsGenerating(false);
-      navigate('/trips/t1/itinerary/build?ai=true');
-    }, 2500);
+      handleCreate(true);
+    }, 900);
   };
 
   const emojis = ['🗼', '🌴', '🏔️', '🏖️', '⛩️', '🌍', '🏛️', '🗾', '🏙️', '⛰️', '🎭', '🌄'];
 
-  const suggestions = [
-    { emoji: '🗼', name: 'Eiffel Tower', location: 'Paris' },
-    { emoji: '🏛️', name: 'Colosseum', location: 'Rome' },
-    { emoji: '🎭', name: 'Broadway Show', location: 'New York' },
-    { emoji: '⛩️', name: 'Fushimi Inari', location: 'Kyoto' },
-    { emoji: '🏖️', name: 'Beach Hopping', location: 'Bali' },
-    { emoji: '🌄', name: 'Machu Picchu', location: 'Peru' },
-  ];
+  const suggestions = destinationCatalog.slice(0, 6).map((destination) => ({
+    emoji: destination.emoji,
+    name: destination.name,
+    location: destination.country,
+    tags: destination.tags,
+  }));
+  const interests = ['Food', 'History', 'Museums', 'Architecture', 'Wellness', 'Beach', 'Adventure', 'Photography'];
+  const updateInterest = (interest) => {
+    setForm((current) => ({
+      ...current,
+      interests: current.interests.includes(interest)
+        ? current.interests.filter((item) => item !== interest)
+        : [...current.interests, interest],
+    }));
+  };
 
   return (
     <div className="page-content">
@@ -48,7 +74,7 @@ export default function CreateTrip() {
             {/* Destination */}
             <div className="form-group">
               <label><MapPin size={14} /> Destination</label>
-              <input className="form-input" placeholder="Where do you want to go?" value={form.place} onChange={e => setForm({...form, place: e.target.value})} />
+              <input className="form-input" placeholder="Paris, Rome, Florence" value={form.place} onChange={e => setForm({...form, place: e.target.value})} required />
             </div>
 
             {/* Dates */}
@@ -63,10 +89,42 @@ export default function CreateTrip() {
               </div>
             </div>
 
+            <div className="form-row">
+              <div className="form-group">
+                <label><DollarSign size={14} /> Budget</label>
+                <input className="form-input" type="number" min="100" value={form.totalBudget} onChange={e => setForm({...form, totalBudget: e.target.value})} />
+              </div>
+              <div className="form-group">
+                <label><Users size={14} /> Budget Tier</label>
+                <select className="form-input" value={form.budgetTier} onChange={e => setForm({...form, budgetTier: e.target.value})}>
+                  <option>Budget</option>
+                  <option>Comfort</option>
+                  <option>Premium</option>
+                  <option>Luxury</option>
+                </select>
+              </div>
+            </div>
+
             {/* Description */}
             <div className="form-group">
               <label><FileText size={14} /> Trip Description</label>
               <textarea className="form-input form-textarea" rows={3} placeholder="Describe your trip — what's the vibe, who's coming, what are you excited about?" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+            </div>
+
+            <div className="form-group">
+              <label><Sparkles size={14} /> AI Personalization</label>
+              <div className="interest-picker">
+                {interests.map((interest) => (
+                  <button
+                    type="button"
+                    key={interest}
+                    className={`chip ${form.interests.includes(interest) ? 'active' : ''}`}
+                    onClick={() => updateInterest(interest)}
+                  >
+                    {interest}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Cover Photo / Emoji */}
@@ -104,7 +162,7 @@ export default function CreateTrip() {
         <div className="create-trip-actions animate-in animate-in-delay-4" style={{ display: 'flex', gap: 'var(--space-md)', flexDirection: 'column' }}>
           <button 
             className="btn btn-primary btn-full" 
-            onClick={() => navigate('/trips/t1/itinerary/build')}
+            onClick={() => handleCreate(false)}
             disabled={isGenerating}
           >
             Continue to Itinerary <ArrowRight size={16} />

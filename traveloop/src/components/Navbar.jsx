@@ -1,13 +1,21 @@
 import { useState } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Compass, User, Settings, LogOut, Menu, X, Map } from 'lucide-react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Compass, LogOut, Menu, Moon, Settings, Sun, User, X } from 'lucide-react';
+import { useTravelPlanner } from '../context/useTravelPlanner';
 import './Navbar.css';
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout, profile, theme, toggleTheme } = useTravelPlanner();
   const isAuth = location.pathname === '/login' || location.pathname === '/register';
   if (isAuth) return null;
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
 
   return (
     <nav className="navbar">
@@ -26,9 +34,15 @@ export default function Navbar() {
         </div>
 
         <div className="navbar-actions">
-          <Link to="/profile" className="nav-avatar" title="Profile"><User size={16} /></Link>
+          <button className="nav-avatar" title="Toggle theme" onClick={toggleTheme}>
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+          <Link to="/profile" className="nav-profile-pill" title="Profile">
+            <span>{profile.firstName?.[0] || <User size={14} />}</span>
+            <strong>{profile.firstName}</strong>
+          </Link>
           <Link to="/admin" className="nav-avatar admin-link" title="Admin"><Settings size={16} /></Link>
-          <Link to="/login" className="nav-avatar" title="Logout"><LogOut size={16} /></Link>
+          <button className="nav-avatar" title="Logout" onClick={handleLogout}><LogOut size={16} /></button>
           <button className="menu-toggle" onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>

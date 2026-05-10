@@ -1,16 +1,30 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Compass, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, Compass, Eye, EyeOff, ShieldCheck, Sparkles } from 'lucide-react';
+import { useTravelPlanner } from '../context/useTravelPlanner';
 import './Auth.css';
 
 export default function Login() {
   const [showPass, setShowPass] = useState(false);
-  const [form, setForm] = useState({ username: '', password: '' });
+  const [form, setForm] = useState({ email: 'harsh@traveloop.com', password: 'demo-pass' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { isDemoMode, login } = useTravelPlanner();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate('/dashboard');
+    setLoading(true);
+    setError('');
+
+    try {
+      await login(form);
+      navigate('/dashboard');
+    } catch (authError) {
+      setError(authError.message || 'Unable to sign in. Check your credentials and try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -31,16 +45,22 @@ export default function Login() {
             <p>Sign in to continue planning your adventures</p>
           </div>
 
+          <div className="auth-mode-banner">
+            {isDemoMode ? <Sparkles size={15} /> : <ShieldCheck size={15} />}
+            <span>{isDemoMode ? 'Demo auth mode active. Add Supabase env keys for live sessions.' : 'Secure Supabase session enabled.'}</span>
+          </div>
+
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
-              <label htmlFor="username">Username or Email</label>
+              <label htmlFor="email">Email</label>
               <input
-                id="username"
-                type="text"
+                id="email"
+                type="email"
                 placeholder="your@email.com"
-                value={form.username}
-                onChange={(e) => setForm({ ...form, username: e.target.value })}
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
                 className="form-input"
+                required
               />
             </div>
 
@@ -54,6 +74,7 @@ export default function Login() {
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   className="form-input"
+                  required
                 />
                 <button
                   type="button"
@@ -65,12 +86,19 @@ export default function Login() {
               </div>
             </div>
 
+            {error && (
+              <div className="auth-error">
+                <AlertCircle size={14} />
+                {error}
+              </div>
+            )}
+
             <div className="auth-extras">
               <a href="#" className="forgot-link">Forgot Password?</a>
             </div>
 
-            <button type="submit" className="btn btn-primary btn-full">
-              Sign In
+            <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+              {loading ? 'Signing In...' : 'Sign In'}
             </button>
           </form>
 

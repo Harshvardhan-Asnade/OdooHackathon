@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { Search, MapPin, Star, DollarSign, Clock, Filter, Plus, Check } from 'lucide-react';
+import { Search, MapPin, Star, DollarSign, Clock, Filter, Plus, Check, Sparkles } from 'lucide-react';
+import { recommendationCatalog } from '../data/mockData';
+import { useTravelPlanner } from '../context/useTravelPlanner';
+import { getPersonalizedRecommendations } from '../lib/plannerEngine';
 import './Pages.css';
 
-const activities = [
+const baseActivities = [
   { id: 'a1', name: 'Paragliding in Interlaken', location: 'Switzerland', price: 180, rating: 4.9, type: 'Adventure', duration: '2 hrs', description: 'Soar above the Swiss Alps with stunning views of Jungfrau.' },
   { id: 'a2', name: 'Cooking Class in Tuscany', location: 'Italy', price: 95, rating: 4.8, type: 'Food', duration: '4 hrs', description: 'Learn authentic Italian pasta-making from local chefs.' },
   { id: 'a3', name: 'Temple Tour in Kyoto', location: 'Japan', price: 45, rating: 4.9, type: 'Sightseeing', duration: '6 hrs', description: 'Visit ancient temples including Kinkaku-ji and Fushimi Inari.' },
@@ -21,7 +24,36 @@ export default function SearchPage() {
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
   const [costFilter, setCostFilter] = useState('All');
+  const [durationFilter, setDurationFilter] = useState('All');
   const [added, setAdded] = useState({});
+  const { profile, trips } = useTravelPlanner();
+  const activeTrip = trips[0];
+  const smartActivities = getPersonalizedRecommendations(profile, activeTrip)
+    .filter((item) => item.type === 'Activity' || item.type === 'Restaurant')
+    .map((item) => ({
+      id: item.id,
+      name: item.name,
+      location: item.city,
+      price: item.price,
+      rating: item.rating,
+      type: item.type === 'Restaurant' ? 'Food' : 'Sightseeing',
+      duration: item.type === 'Restaurant' ? '2 hrs' : '3 hrs',
+      description: item.reason,
+      fitScore: item.fitScore,
+    }));
+  const activities = [...smartActivities, ...baseActivities, ...recommendationCatalog
+    .filter((item) => item.type === 'Activity')
+    .map((item) => ({
+      id: `catalog-${item.id}`,
+      name: item.name,
+      location: item.city,
+      price: item.price,
+      rating: item.rating,
+      type: 'Sightseeing',
+      duration: '3 hrs',
+      description: item.reason,
+      fitScore: 76,
+    }))];
 
   const filtered = activities.filter(a => {
     if (query && !a.name.toLowerCase().includes(query.toLowerCase()) && !a.location.toLowerCase().includes(query.toLowerCase())) return false;
@@ -30,8 +62,12 @@ export default function SearchPage() {
     if (costFilter === 'Under $50' && a.price >= 50) return false;
     if (costFilter === '$50–$100' && (a.price < 50 || a.price > 100)) return false;
     if (costFilter === '$100+' && a.price < 100) return false;
+    if (durationFilter === '1–2 hrs' && !['1.5 hrs', '2 hrs'].includes(a.duration)) return false;
+    if (durationFilter === '3–4 hrs' && !['3 hrs', '4 hrs'].includes(a.duration)) return false;
+    if (durationFilter === '5+ hrs' && !a.duration.includes('5') && !a.duration.includes('6')) return false;
+    if (durationFilter === 'Full day' && a.duration !== 'Full day') return false;
     return true;
-  });
+  }).sort((a, b) => (b.fitScore || 0) - (a.fitScore || 0));
 
   return (
     <div className="page-content">
@@ -58,6 +94,10 @@ export default function SearchPage() {
             <span className="filter-label"><DollarSign size={13} /> Cost</span>
             <div className="filter-chips">{costs.map(c => (<button key={c} className={`chip ${costFilter === c ? 'active' : ''}`} onClick={() => setCostFilter(c)}>{c}</button>))}</div>
           </div>
+          <div className="filter-group">
+            <span className="filter-label"><Clock size={13} /> Duration</span>
+            <div className="filter-chips">{durations.map(d => (<button key={d} className={`chip ${durationFilter === d ? 'active' : ''}`} onClick={() => setDurationFilter(d)}>{d}</button>))}</div>
+          </div>
         </div>
 
         <div className="activity-results-count animate-in animate-in-delay-3">
@@ -72,6 +112,7 @@ export default function SearchPage() {
                 <div className="activity-rating"><Star size={12} fill="var(--gold)" stroke="var(--gold)" /> {item.rating}</div>
               </div>
               <h4>{item.name}</h4>
+              {item.fitScore && <span className="ai-fit-pill"><Sparkles size={11} /> {item.fitScore}% AI fit</span>}
               <p className="activity-desc">{item.description}</p>
               <div className="activity-meta-row">
                 <span><MapPin size={12} /> {item.location}</span>

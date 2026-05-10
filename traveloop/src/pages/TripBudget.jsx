@@ -1,28 +1,25 @@
 import { useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { DollarSign, TrendingUp, AlertTriangle, PieChart, BarChart3, Sparkles, Loader, Check } from 'lucide-react';
-import { trips, invoiceData } from '../data/mockData';
-import { Link } from 'react-router-dom';
+import CollaborationPanel from '../components/CollaborationPanel';
+import { useTravelPlanner } from '../context/useTravelPlanner';
+import { estimateTripBudget } from '../lib/plannerEngine';
 import './Pages.css';
 
-const aiSuggestions = [
-  { id: 1, text: 'Switch Rome hotel from 4-star to boutique B&B', savings: 320, impact: 'low', accepted: false },
-  { id: 2, text: 'Book Rome→Florence train instead of flight', savings: 85, impact: 'low', accepted: false },
-  { id: 3, text: 'Use Roma Pass for Colosseum + Vatican (bundle discount)', savings: 45, impact: 'none', accepted: false },
-  { id: 4, text: 'Replace 2 restaurant dinners with highly-rated trattorias', savings: 60, impact: 'none', accepted: false },
-  { id: 5, text: 'Book Uffizi tickets in advance (skip-the-line saves time + money)', savings: 25, impact: 'none', accepted: false },
-];
-
 export default function TripBudget() {
-  const trip = trips[0];
+  const { id } = useParams();
+  const { getTripById } = useTravelPlanner();
+  const trip = getTripById(id);
+  const estimated = estimateTripBudget(trip);
   const spent = trip.totalSpent;
-  const budget = trip.totalBudget;
+  const budget = trip.totalBudget || estimated.total;
   const remaining = budget - spent;
   const isOver = remaining < 0;
   const pct = Math.min((spent / budget) * 100, 100);
 
   const [showAI, setShowAI] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState(aiSuggestions);
+  const [suggestions, setSuggestions] = useState(estimated.suggestions.map((suggestion) => ({ ...suggestion, accepted: false })));
 
   const handleAIAnalyze = () => {
     setLoading(true);
@@ -35,12 +32,7 @@ export default function TripBudget() {
 
   const totalSavings = suggestions.filter(s => s.accepted).reduce((sum, s) => sum + s.savings, 0);
 
-  const categories = [
-    { name: 'Hotels', amount: 9000, color: 'var(--terracotta)', pct: 39 },
-    { name: 'Flights', amount: 12000, color: 'var(--teal)', pct: 52 },
-    { name: 'Activities', amount: 420, color: 'var(--gold)', pct: 2 },
-    { name: 'Food & Dining', amount: 1580, color: 'var(--sage)', pct: 7 },
-  ];
+  const categories = estimated.categories;
 
   const dailyBudget = [
     { day: 'Day 1', amount: 3800, limit: 4000 },
@@ -117,7 +109,16 @@ export default function TripBudget() {
           </div>
           <div className="budget-stat-card">
             <span className="budget-stat-label">Avg / Day</span>
-            <span className="budget-stat-value">${Math.round(spent / 5).toLocaleString()}</span>
+            <span className="budget-stat-value">${estimated.dailyBase.toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div className="card animate-in animate-in-delay-2">
+          <h4><TrendingUp size={16} /> Automatic Estimate</h4>
+          <div className="estimate-strip">
+            <span>AI estimated trip cost</span>
+            <strong>${estimated.total.toLocaleString()}</strong>
+            <span>{trip.travelers.length} travelers · {trip.cities.length} cities · {trip.budgetTier}</span>
           </div>
         </div>
 
@@ -180,6 +181,13 @@ export default function TripBudget() {
               <span className="legend-item"><span className="legend-line" /> Daily limit ($4,000)</span>
             </div>
           </div>
+        </div>
+
+        <div className="section animate-in animate-in-delay-5">
+          <div className="section-header">
+            <div><h2>Shared Budget Controls</h2><p className="section-sub">Split expenses and settle balances with collaborators</p></div>
+          </div>
+          <CollaborationPanel trip={trip} />
         </div>
       </div>
     </div>

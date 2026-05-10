@@ -117,13 +117,38 @@
   font-size: var(--text-3xl);
   margin-bottom: var(--space-sm);
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
 }
 
 .auth-header p {
   color: var(--warm-gray);
   font-size: var(--text-sm);
   font-weight: 400;
+}
+
+.auth-mode-banner,
+.auth-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  margin-bottom: var(--space-xl);
+}
+
+.auth-mode-banner {
+  color: var(--teal);
+  background: rgba(23,80,77,0.08);
+  border: 1px solid rgba(23,80,77,0.12);
+}
+
+.auth-error {
+  color: var(--error);
+  background: rgba(184,64,64,0.08);
+  border: 1px solid rgba(184,64,64,0.14);
+  margin-bottom: 0;
 }
 
 .auth-form {
@@ -232,6 +257,31 @@
   font-size: var(--text-xs);
   color: var(--warm-gray);
   font-weight: 500;
+}
+
+.interest-picker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.interest-picker .chip {
+  margin: 0;
+  padding: 7px 13px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  background: rgba(255,255,255,0.5);
+  color: var(--charcoal-light);
+  border: 1px solid rgba(28,25,23,0.08);
+  transition: all var(--t-fast);
+}
+
+.interest-picker .chip.active {
+  background: var(--charcoal);
+  color: white;
+  border-color: var(--charcoal);
 }
 
 /* ===== BUTTONS ===== */

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Edit2, Trash2, StickyNote, Sparkles, Camera, Loader, FileText } from 'lucide-react';
+import { Plus, Edit2, Trash2, StickyNote, Sparkles, Camera, Loader } from 'lucide-react';
 import { tripNotes } from '../data/mockData';
 import './Pages.css';
 

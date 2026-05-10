@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Sparkles, Bot, User } from 'lucide-react';
+import { useTravelPlanner } from '../context/useTravelPlanner';
+import { generateAIResponse, isGeminiConfigured } from '../lib/gemini';
 import './AIChatbot.css';
 
 const aiResponses = {
@@ -22,6 +24,7 @@ function getAIResponse(msg) {
 }
 
 export default function AIChatbot() {
+  const { profile, trips } = useTravelPlanner();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
     { role: 'ai', text: "Hey! 👋 I'm your AI travel concierge. Ask me anything about your trip — visa info, restaurant picks, weather, or budget tips!" }
@@ -41,18 +44,35 @@ export default function AIChatbot() {
     { label: '✈️ Visa info', prompt: 'What are the visa requirements?' },
   ];
 
-  const sendMessage = (text) => {
+  const sendMessage = async (text) => {
     if (!text.trim()) return;
     const userMsg = { role: 'user', text: text.trim() };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setTyping(true);
 
-    setTimeout(() => {
-      const aiReply = { role: 'ai', text: getAIResponse(text) };
-      setMessages(prev => [...prev, aiReply]);
-      setTyping(false);
-    }, 1200 + Math.random() * 800);
+    const fallback = getAIResponse(text);
+
+    if (!isGeminiConfigured) {
+      setTimeout(() => {
+        setMessages(prev => [...prev, { role: 'ai', text: fallback }]);
+        setTyping(false);
+      }, 700);
+      return;
+    }
+
+    const activeTrip = trips[0];
+    const prompt = `
+You are Traveloop's AI travel concierge. Be concise, practical, and personalized.
+Traveler: ${JSON.stringify(profile)}
+Active trip: ${JSON.stringify(activeTrip)}
+User question: ${text}
+Answer with route, budget, weather, or recommendation details when relevant.
+`;
+
+    const response = await generateAIResponse(prompt);
+    setMessages(prev => [...prev, { role: 'ai', text: response || fallback }]);
+    setTyping(false);
   };
 
   return (

@@ -16,10 +16,10 @@
   --teal-light: #278A85;
   --teal-dark: #0C302E;
   --teal-glow: rgba(23, 80, 77, 0.12);
-  --sand: #F0E4CC;
-  --sand-light: #F7F1E3;
-  --cream: #FBF7EE;
-  --parchment: #F5EDD8;
+  --sand: #E6EEF0;
+  --sand-light: #F4F7F5;
+  --cream: #F8FAF7;
+  --parchment: #EEF3EA;
   --charcoal: #1C1917;
   --charcoal-mid: #3D3733;
   --charcoal-light: #57524D;
@@ -113,6 +113,46 @@
   --content-narrow: 820px;
 }
 
+:root[data-theme='dark'] {
+  --terracotta: #E57A55;
+  --terracotta-light: #F09270;
+  --terracotta-dark: #A6482D;
+  --terracotta-glow: rgba(229, 122, 85, 0.18);
+  --teal: #67D2C8;
+  --teal-light: #8BE3DC;
+  --teal-dark: #1A5B57;
+  --teal-glow: rgba(103, 210, 200, 0.16);
+  --sand: #273239;
+  --sand-light: #182126;
+  --cream: #101719;
+  --parchment: #1B252B;
+  --charcoal: #F4F7F5;
+  --charcoal-mid: #DFE9E5;
+  --charcoal-light: #C2CEC9;
+  --warm-gray: #99A6A5;
+  --warm-gray-light: #6D7B7B;
+  --warm-gray-lighter: #405051;
+  --gold: #E4B85A;
+  --sage: #91C996;
+  --rose: #E98989;
+  --error: #F27777;
+  --success: #8BE0A5;
+  --surface-0: #101719;
+  --surface-1: #172126;
+  --surface-2: #202B31;
+  --surface-elevated: rgba(25, 35, 40, 0.82);
+  --surface-glass: rgba(29, 42, 47, 0.58);
+  --surface-overlay: rgba(4, 7, 8, 0.72);
+  --glass-border: 1px solid rgba(255,255,255,0.1);
+  --glass-border-subtle: 1px solid rgba(255,255,255,0.08);
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.22), 0 1px 2px rgba(0,0,0,0.18);
+  --shadow-md: 0 4px 18px rgba(0,0,0,0.28);
+  --shadow-lg: 0 14px 42px rgba(0,0,0,0.34);
+  --shadow-xl: 0 22px 64px rgba(0,0,0,0.42);
+  --shadow-2xl: 0 34px 90px rgba(0,0,0,0.5);
+}
+
 /* ============================================
    RESET & BASE
    ============================================ */
@@ -136,6 +176,11 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   position: relative;
+}
+
+:root[data-theme='dark'] body::before {
+  opacity: 0.04;
+  mix-blend-mode: screen;
 }
 
 /* Topographic texture overlay */
@@ -175,7 +220,7 @@ h1, h2, h3, h4, h5 {
   font-weight: 600;
   line-height: 1.2;
   color: var(--charcoal);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 h1 { font-size: var(--text-5xl); font-weight: 700; }

@@ -1,21 +1,47 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Compass, Camera } from 'lucide-react';
+import { AlertCircle, Camera, Compass, Sparkles } from 'lucide-react';
+import { useTravelPlanner } from '../context/useTravelPlanner';
 import './Auth.css';
 
 export default function Register() {
   const navigate = useNavigate();
+  const { isDemoMode, register } = useTravelPlanner();
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phone: '',
     city: '', country: '', bio: '', password: '',
+    travelStyle: 'Balanced explorer',
+    preferredBudget: '4200',
+    interests: ['Food', 'History'],
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate('/dashboard');
+    setLoading(true);
+    setError('');
+
+    try {
+      await register(form);
+      navigate('/dashboard');
+    } catch (authError) {
+      setError(authError.message || 'Unable to create your account.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const update = (field) => (e) => setForm({ ...form, [field]: e.target.value });
+  const toggleInterest = (interest) => {
+    setForm((current) => ({
+      ...current,
+      interests: current.interests.includes(interest)
+        ? current.interests.filter((item) => item !== interest)
+        : [...current.interests, interest],
+    }));
+  };
+  const interests = ['Food', 'History', 'Architecture', 'Wellness', 'Beach', 'Adventure', 'Photography', 'Shopping'];
 
   return (
     <div className="auth-page">
@@ -35,6 +61,11 @@ export default function Register() {
             <p>Start planning unforgettable journeys</p>
           </div>
 
+          <div className="auth-mode-banner">
+            <Sparkles size={15} />
+            <span>{isDemoMode ? 'Your profile is saved locally until Supabase keys are configured.' : 'Profile metadata will sync to Supabase Auth.'}</span>
+          </div>
+
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="avatar-upload">
               <div className="avatar-circle">
@@ -46,7 +77,7 @@ export default function Register() {
             <div className="form-row">
               <div className="form-group">
                 <label>First Name</label>
-                <input className="form-input" placeholder="First name" value={form.firstName} onChange={update('firstName')} />
+                <input className="form-input" placeholder="First name" value={form.firstName} onChange={update('firstName')} required />
               </div>
               <div className="form-group">
                 <label>Last Name</label>
@@ -57,7 +88,7 @@ export default function Register() {
             <div className="form-row">
               <div className="form-group">
                 <label>Email Address</label>
-                <input className="form-input" type="email" placeholder="your@email.com" value={form.email} onChange={update('email')} />
+                <input className="form-input" type="email" placeholder="your@email.com" value={form.email} onChange={update('email')} required />
               </div>
               <div className="form-group">
                 <label>Phone Number</label>
@@ -78,7 +109,40 @@ export default function Register() {
 
             <div className="form-group">
               <label>Password</label>
-              <input className="form-input" type="password" placeholder="Create a password" value={form.password} onChange={update('password')} />
+              <input className="form-input" type="password" placeholder="Create a password" value={form.password} onChange={update('password')} required minLength={6} />
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Travel Style</label>
+                <select className="form-input" value={form.travelStyle} onChange={update('travelStyle')}>
+                  <option>Balanced explorer</option>
+                  <option>Budget backpacker</option>
+                  <option>Luxury slow traveler</option>
+                  <option>Adventure maximizer</option>
+                  <option>Family comfort planner</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Preferred Budget</label>
+                <input className="form-input" type="number" min="100" value={form.preferredBudget} onChange={update('preferredBudget')} />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Interests for AI Recommendations</label>
+              <div className="interest-picker">
+                {interests.map((interest) => (
+                  <button
+                    type="button"
+                    key={interest}
+                    className={`chip ${form.interests.includes(interest) ? 'active' : ''}`}
+                    onClick={() => toggleInterest(interest)}
+                  >
+                    {interest}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="form-group">
@@ -86,8 +150,15 @@ export default function Register() {
               <textarea className="form-input form-textarea" placeholder="What kind of traveler are you?" value={form.bio} onChange={update('bio')} rows={3} />
             </div>
 
-            <button type="submit" className="btn btn-primary btn-full">
-              Create Account
+            {error && (
+              <div className="auth-error">
+                <AlertCircle size={14} />
+                {error}
+              </div>
+            )}
+
+            <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+              {loading ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 

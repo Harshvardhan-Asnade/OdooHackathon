@@ -1,19 +1,8 @@
 import { useState } from 'react';
-import { Search, MapPin, DollarSign, TrendingUp, Plus, Filter, Globe } from 'lucide-react';
+import { Search, MapPin, DollarSign, TrendingUp, Plus, Globe, Sparkles, CloudSun } from 'lucide-react';
+import { destinationCatalog } from '../data/mockData';
+import { useTravelPlanner } from '../context/useTravelPlanner';
 import './Pages.css';
-
-const cities = [
-  { id: 'c1', name: 'Paris', country: 'France', region: 'Europe', costIndex: 'High', popularity: 892, emoji: '🗼', description: 'City of lights, art, and romance' },
-  { id: 'c2', name: 'Tokyo', country: 'Japan', region: 'Asia', costIndex: 'High', popularity: 756, emoji: '🗾', description: 'Blend of tradition and futuristic innovation' },
-  { id: 'c3', name: 'Bali', country: 'Indonesia', region: 'Asia', costIndex: 'Low', popularity: 634, emoji: '🌴', description: 'Tropical paradise with rice terraces and temples' },
-  { id: 'c4', name: 'Rome', country: 'Italy', region: 'Europe', costIndex: 'Medium', popularity: 521, emoji: '🏛️', description: 'Ancient ruins, art, and world-class cuisine' },
-  { id: 'c5', name: 'New York', country: 'USA', region: 'North America', costIndex: 'Very High', popularity: 498, emoji: '🗽', description: 'The city that never sleeps' },
-  { id: 'c6', name: 'Bangkok', country: 'Thailand', region: 'Asia', costIndex: 'Low', popularity: 445, emoji: '🛕', description: 'Vibrant street food and ornate temples' },
-  { id: 'c7', name: 'Barcelona', country: 'Spain', region: 'Europe', costIndex: 'Medium', popularity: 412, emoji: '🏖️', description: 'Gaudí architecture and Mediterranean vibes' },
-  { id: 'c8', name: 'Cape Town', country: 'South Africa', region: 'Africa', costIndex: 'Medium', popularity: 320, emoji: '⛰️', description: 'Table Mountain and stunning coastline' },
-  { id: 'c9', name: 'Cusco', country: 'Peru', region: 'South America', costIndex: 'Low', popularity: 285, emoji: '🏔️', description: 'Gateway to Machu Picchu and Incan heritage' },
-  { id: 'c10', name: 'Dubai', country: 'UAE', region: 'Middle East', costIndex: 'Very High', popularity: 390, emoji: '🏙️', description: 'Futuristic skyline meets desert luxury' },
-];
 
 const regionFilters = ['All', 'Europe', 'Asia', 'North America', 'South America', 'Africa', 'Middle East'];
 const costFilters = ['All', 'Low', 'Medium', 'High', 'Very High'];
@@ -23,13 +12,18 @@ export default function CitySearch() {
   const [regionFilter, setRegionFilter] = useState('All');
   const [costFilter, setCostFilter] = useState('All');
   const [added, setAdded] = useState({});
+  const { profile } = useTravelPlanner();
+  const cities = destinationCatalog.map((city) => ({
+    ...city,
+    aiFit: Math.min(99, 58 + city.tags.filter((tag) => profile.interests.some((interest) => tag.toLowerCase().includes(interest.toLowerCase()))).length * 13 + Math.round(city.rating * 4)),
+  }));
 
   const filtered = cities.filter(c => {
     if (query && !c.name.toLowerCase().includes(query.toLowerCase()) && !c.country.toLowerCase().includes(query.toLowerCase())) return false;
     if (regionFilter !== 'All' && c.region !== regionFilter) return false;
     if (costFilter !== 'All' && c.costIndex !== costFilter) return false;
     return true;
-  });
+  }).sort((a, b) => b.aiFit - a.aiFit);
 
   const costColors = { 'Low': 'var(--sage)', 'Medium': 'var(--gold)', 'High': 'var(--terracotta)', 'Very High': 'var(--error)' };
 
@@ -84,6 +78,10 @@ export default function CitySearch() {
                 <h3>{city.name}</h3>
                 <span className="city-country"><MapPin size={12} /> {city.country} · {city.region}</span>
                 <p className="city-desc">{city.description}</p>
+                <div className="city-signal-row">
+                  <span><Sparkles size={12} /> {city.aiFit}% AI fit</span>
+                  <span><CloudSun size={12} /> Best {city.bestMonths.slice(0, 2).join('/')}</span>
+                </div>
                 <div className="city-card-footer">
                   <span className="city-cost-badge" style={{ color: costColors[city.costIndex] }}>
                     <DollarSign size={12} /> {city.costIndex}

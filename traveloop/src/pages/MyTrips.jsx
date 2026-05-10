@@ -1,18 +1,27 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Calendar, Users, Trash2, Edit3, Plus, MoreVertical, Search } from 'lucide-react';
-import { trips } from '../data/mockData';
+import { MapPin, Calendar, Users, Trash2, Edit3, Plus, Search, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { useTravelPlanner } from '../context/useTravelPlanner';
 import './Pages.css';
 
 export default function MyTrips() {
   const [filter, setFilter] = useState('all');
+  const [budgetFilter, setBudgetFilter] = useState('all');
   const [searchQ, setSearchQ] = useState('');
+  const { deleteTrip, trips } = useTravelPlanner();
 
   const filtered = trips.filter(t => {
     if (filter !== 'all' && t.status !== filter) return false;
-    if (searchQ && !t.name.toLowerCase().includes(searchQ.toLowerCase())) return false;
+    if (budgetFilter !== 'all' && t.budgetTier !== budgetFilter) return false;
+    if (searchQ) {
+      const query = searchQ.toLowerCase();
+      const match = t.name.toLowerCase().includes(query)
+        || t.cities.some((city) => city.toLowerCase().includes(query))
+        || t.interests?.some((interest) => interest.toLowerCase().includes(query));
+      if (!match) return false;
+    }
     return true;
-  });
+  }).sort((a, b) => (b.aiScore || 0) - (a.aiScore || 0));
 
   const statusConfig = {
     upcoming: { bg: 'var(--terracotta)', text: '#fff' },
@@ -44,6 +53,14 @@ export default function MyTrips() {
               </button>
             ))}
           </div>
+          <div className="filter-chips">
+            <span className="filter-label"><SlidersHorizontal size={13} /> Budget</span>
+            {['all', 'Budget', 'Comfort', 'Premium', 'Luxury'].map(f => (
+              <button key={f} className={`chip ${budgetFilter === f ? 'active' : ''}`} onClick={() => setBudgetFilter(f)}>
+                {f === 'all' ? 'Any' : f}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Trip Cards */}
@@ -63,13 +80,14 @@ export default function MyTrips() {
                   </div>
                   <div className="mytrip-actions">
                     <Link to={`/trips/${trip.id}/itinerary/build`} className="btn-icon" title="Edit"><Edit3 size={15} /></Link>
-                    <button className="btn-icon danger" title="Delete"><Trash2 size={15} /></button>
+                    <button className="btn-icon danger" title="Delete" onClick={() => deleteTrip(trip.id)}><Trash2 size={15} /></button>
                   </div>
                 </div>
                 <div className="mytrip-meta">
                   <span><MapPin size={13} /> {trip.cities.join(' → ')}</span>
                   <span><Calendar size={13} /> {trip.startDate} — {trip.endDate}</span>
                   <span><Users size={13} /> {trip.travelers.length} travelers</span>
+                  <span><Sparkles size={13} /> AI fit {trip.aiScore || 88}%</span>
                 </div>
                 <div className="mytrip-footer">
                   <div className="mytrip-travelers">
