@@ -65,6 +65,10 @@ export default function Login() {
               </div>
             </div>
 
+            <div className="auth-extras">
+              <a href="#" className="forgot-link">Forgot Password?</a>
+            </div>
+
             <button type="submit" className="btn btn-primary btn-full">
               Sign In
             </button>
