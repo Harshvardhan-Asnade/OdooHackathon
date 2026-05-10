@@ -1,16 +1,21 @@
-import { invoiceData, trips } from '../data/mockData';
+import { invoiceData } from '../data/mockData';
+import { useTravelPlanner } from '../context/useTravelPlanner';
 import { ArrowLeft, Download, FileText, CheckCircle, DollarSign } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import './Pages.css';
 
 export default function Invoice() {
+  const { id } = useParams();
+  const { getTripById } = useTravelPlanner();
+  const trip = getTripById(id);
   const inv = invoiceData;
-  const trip = trips[0];
+
+  if (!trip) return <div>Trip not found</div>;
 
   return (
     <div className="page-content">
       <div className="container">
-        <Link to="/trips/t1" className="back-link animate-in"><ArrowLeft size={16} /> Back to My Trips</Link>
+        <Link to={`/trips/${trip.id}`} className="back-link animate-in"><ArrowLeft size={16} /> Back to My Trips</Link>
 
         <div className="invoice-layout">
           <div className="invoice-main animate-in animate-in-delay-1">

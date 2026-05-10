@@ -11,6 +11,14 @@ import {
   signOutUser,
   signUpWithProfile,
   updateAuthProfile,
+  fetchProfile,
+  updateProfileDb,
+  fetchUserTrips,
+  fetchUserItineraries,
+  insertTrip,
+  updateTripInDb,
+  deleteTripFromDb,
+  upsertItinerary,
 } from '../lib/supabase';
 import { createDayWiseItinerary, parseCityInput } from '../lib/plannerEngine';
 import { TravelPlannerContext } from './plannerContextValue';
@@ -111,7 +119,29 @@ export function TravelPlannerProvider({ children }) {
       const { data } = await getCurrentSession();
       if (!active) return;
       setSession(data?.session || null);
-      if (data?.session?.user) setProfile(profileFromSupabaseUser(data.session.user));
+      if (data?.session?.user) {
+        const user = data.session.user;
+        const profileData = await fetchProfile(user.id);
+        if (profileData.data) {
+          setProfile(profileFromSupabaseUser({ ...user, user_metadata: profileData.data }));
+        } else {
+          setProfile(profileFromSupabaseUser(user));
+        }
+
+        const tripsData = await fetchUserTrips(user.id);
+        if (tripsData.data?.length) {
+          setTrips(tripsData.data);
+        }
+
+        const itinsData = await fetchUserItineraries(user.id);
+        if (itinsData.data?.length) {
+          const loadedItins = {};
+          itinsData.data.forEach(itin => {
+            loadedItins[itin.tripId] = { sections: itin.sections };
+          });
+          setItineraries(loadedItins);
+        }
+      }
       setAuthStatus(data?.session || !isSupabaseConfigured ? 'authenticated' : 'guest');
     }
 
@@ -188,10 +218,20 @@ export function TravelPlannerProvider({ children }) {
   async function saveProfile(nextProfile) {
     setProfile(nextProfile);
     await updateAuthProfile(nextProfile);
+    if (isSupabaseConfigured && session?.user?.id) {
+      const dbProfile = { ...nextProfile };
+      delete dbProfile.id; // don't update ID
+      delete dbProfile.email; // email shouldn't be directly updated here
+      delete dbProfile.role; // don't allow changing role
+      delete dbProfile.verified;
+      delete dbProfile.planTier;
+      await updateProfileDb(session.user.id, dbProfile);
+    }
   }
 
-  function createTrip(form) {
+  async function createTrip(form) {
     const trip = makeTripFromForm(form, profile);
+    trip.userId = session?.user?.id || null;
     const days = createDayWiseItinerary(trip, profile);
     const sections = trip.cities.map((city, index) => {
       const cityDays = days.filter((day) => day.city === city);
@@ -213,30 +253,44 @@ export function TravelPlannerProvider({ children }) {
       [trip.id]: { sections },
     }));
 
+    if (isSupabaseConfigured && session?.user?.id) {
+      await insertTrip(trip);
+      await upsertItinerary({ tripId: trip.id, userId: session.user.id, sections });
+    }
+
     return trip;
   }
 
-  function updateTrip(tripId, patch) {
+  async function updateTrip(tripId, patch) {
     setTrips((current) => current.map((trip) => (
       trip.id === tripId ? { ...trip, ...patch, lastEditedBy: profile.firstName } : trip
     )));
+    if (isSupabaseConfigured && session?.user?.id) {
+      await updateTripInDb(tripId, patch);
+    }
   }
 
-  function deleteTrip(tripId) {
+  async function deleteTrip(tripId) {
     setTrips((current) => current.filter((trip) => trip.id !== tripId));
     setItineraries((current) => {
       const next = { ...current };
       delete next[tripId];
       return next;
     });
+    if (isSupabaseConfigured && session?.user?.id) {
+      await deleteTripFromDb(tripId);
+    }
   }
 
-  function updateItinerary(tripId, itinerary) {
+  async function updateItinerary(tripId, itinerary) {
     setItineraries((current) => ({
       ...current,
       [tripId]: itinerary,
     }));
     updateTrip(tripId, { optimizationScore: 91 });
+    if (isSupabaseConfigured && session?.user?.id) {
+      await upsertItinerary({ tripId, userId: session.user.id, sections: itinerary.sections || [] });
+    }
   }
 
   function getTripById(tripId) {

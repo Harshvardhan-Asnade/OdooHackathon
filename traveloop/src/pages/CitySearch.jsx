@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, MapPin, DollarSign, TrendingUp, Plus, Globe, Sparkles, CloudSun } from 'lucide-react';
 import { destinationCatalog } from '../data/mockData';
 import { useTravelPlanner } from '../context/useTravelPlanner';
+import { getCityImageUrl } from '../lib/images';
 import './Pages.css';
 
 const regionFilters = ['All', 'Europe', 'Asia', 'North America', 'South America', 'Africa', 'Middle East'];
@@ -68,9 +69,17 @@ export default function CitySearch() {
         <div className="city-grid">
           {filtered.map((city, i) => (
             <div key={city.id} className={`city-card animate-in animate-in-delay-${Math.min(i + 3, 8)}`}>
-              <div className="city-card-top">
-                <span className="city-emoji-lg">{city.emoji}</span>
-                <div className="city-popularity">
+              <div 
+                className="city-card-top"
+                style={{ 
+                  backgroundImage: `linear-gradient(rgba(28,25,23,0.3), rgba(28,25,23,0.7)), url(${getCityImageUrl(city.name, 400, 300)})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  minHeight: '140px'
+                }}
+              >
+                <span className="city-emoji-lg" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>{city.emoji}</span>
+                <div className="city-popularity" style={{ color: 'white' }}>
                   <TrendingUp size={12} /> {city.popularity}
                 </div>
               </div>

@@ -56,3 +56,45 @@ export async function updateAuthProfile(profile) {
     data: profile,
   });
 }
+
+// Database CRUD operations
+
+export async function fetchProfile(userId) {
+  if (!isSupabaseConfigured) return { data: null, error: null };
+  return supabase.from('profiles').select('*').eq('id', userId).single();
+}
+
+export async function updateProfileDb(userId, profileData) {
+  if (!isSupabaseConfigured) return { data: null, error: null };
+  return supabase.from('profiles').update(profileData).eq('id', userId);
+}
+
+export async function fetchUserTrips(userId) {
+  if (!isSupabaseConfigured) return { data: [], error: null };
+  return supabase.from('trips').select('*').eq('userId', userId).order('createdAt', { ascending: false });
+}
+
+export async function fetchUserItineraries(userId) {
+  if (!isSupabaseConfigured) return { data: [], error: null };
+  return supabase.from('itineraries').select('*').eq('userId', userId);
+}
+
+export async function insertTrip(trip) {
+  if (!isSupabaseConfigured) return { data: null, error: null };
+  return supabase.from('trips').insert([trip]).select().single();
+}
+
+export async function updateTripInDb(tripId, updates) {
+  if (!isSupabaseConfigured) return { data: null, error: null };
+  return supabase.from('trips').update(updates).eq('id', tripId).select().single();
+}
+
+export async function deleteTripFromDb(tripId) {
+  if (!isSupabaseConfigured) return { data: null, error: null };
+  return supabase.from('trips').delete().eq('id', tripId);
+}
+
+export async function upsertItinerary(itinerary) {
+  if (!isSupabaseConfigured) return { data: null, error: null };
+  return supabase.from('itineraries').upsert([itinerary], { onConflict: 'tripId' }).select().single();
+}

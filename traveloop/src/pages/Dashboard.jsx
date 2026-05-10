@@ -5,6 +5,7 @@ import { regions } from '../data/mockData';
 import SmartInsights from '../components/SmartInsights';
 import WeatherPanel from '../components/WeatherPanel';
 import { useTravelPlanner } from '../context/useTravelPlanner';
+import { getCityImageUrl } from '../lib/images';
 import './Dashboard.css';
 
 export default function Dashboard() {
@@ -117,9 +118,19 @@ export default function Dashboard() {
           </div>
           <div className="region-scroll">
             {regions.map((region, i) => (
-              <Link to="/cities" key={region.id} className={`region-card-v2 animate-in animate-in-delay-${Math.min(i + 4, 8)}`}>
-                <div className="region-emoji-wrap" style={{ '--accent': region.color }}><span className="region-emoji-v2">{region.image}</span></div>
-                <div className="region-label"><span className="region-name-v2">{region.name}</span><ArrowUpRight size={13} className="region-arrow" /></div>
+              <Link 
+                to="/cities" 
+                key={region.id} 
+                className={`region-card-v2 animate-in animate-in-delay-${Math.min(i + 4, 8)}`}
+                style={{ 
+                  backgroundImage: `linear-gradient(rgba(28,25,23,0.3), rgba(28,25,23,0.6)), url(${getCityImageUrl(region.name, 300, 400)})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  minHeight: '200px'
+                }}
+              >
+                <div className="region-emoji-wrap" style={{ '--accent': region.color, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }}><span className="region-emoji-v2">{region.image}</span></div>
+                <div className="region-label"><span className="region-name-v2" style={{ color: 'white' }}>{region.name}</span><ArrowUpRight size={13} className="region-arrow" style={{ color: 'white' }} /></div>
               </Link>
             ))}
           </div>
@@ -134,8 +145,15 @@ export default function Dashboard() {
           <div className="trips-grid-v2">
             {searchedTrips.map((trip, i) => (
               <Link to={`/trips/${trip.id}`} key={trip.id} className={`trip-card-v2 ${i === 0 ? 'trip-featured' : ''} animate-in animate-in-delay-${Math.min(i + 5, 8)}`}>
-                <div className="trip-visual">
-                  <span className="trip-emoji-v2">{trip.coverEmoji}</span>
+                <div 
+                  className="trip-visual"
+                  style={{ 
+                    backgroundImage: `linear-gradient(rgba(28,25,23,0.2), rgba(28,25,23,0.5)), url(${getCityImageUrl(trip.cities?.[0], 400, 300)})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                  }}
+                >
+                  <span className="trip-emoji-v2" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>{trip.coverEmoji}</span>
                   <div className="trip-badge" style={{ background: statusColors[trip.status].bg, color: statusColors[trip.status].text }}>{trip.status}</div>
                 </div>
                 <div className="trip-content">

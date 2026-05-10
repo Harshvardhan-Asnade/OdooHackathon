@@ -5,6 +5,7 @@ import InteractiveMap from '../components/InteractiveMap';
 import SmartInsights from '../components/SmartInsights';
 import WeatherPanel from '../components/WeatherPanel';
 import { useTravelPlanner } from '../context/useTravelPlanner';
+import { getCityImageUrl } from '../lib/images';
 import './Pages.css';
 
 export default function TripDetail() {
@@ -14,12 +15,21 @@ export default function TripDetail() {
   const itinerary = itineraries[trip.id] || { sections: [] };
   const remaining = trip.totalBudget - trip.totalSpent;
 
+  if (!trip) return <div>Trip not found</div>;
+
   return (
     <div className="page-content">
       <div className="container">
         <div className="trip-detail-header animate-in">
-          <div className="trip-detail-cover" style={{ background: 'linear-gradient(135deg, rgba(191,91,59,0.12), rgba(191,91,59,0.04))' }}>
-            <span style={{ fontSize: 72 }}>{trip.coverEmoji}</span>
+          <div 
+            className="trip-detail-cover" 
+            style={{ 
+              backgroundImage: `linear-gradient(rgba(28,25,23,0.3), rgba(28,25,23,0.7)), url(${getCityImageUrl(trip.cities?.[0], 600, 400)})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
+          >
+            <span style={{ fontSize: 72, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>{trip.coverEmoji}</span>
           </div>
           <div className="trip-detail-info">
             <div className="trip-status status-upcoming">{trip.status}</div>

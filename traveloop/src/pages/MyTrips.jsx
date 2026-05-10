@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Calendar, Users, Trash2, Edit3, Plus, Search, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { useTravelPlanner } from '../context/useTravelPlanner';
+import { getCityImageUrl } from '../lib/images';
 import './Pages.css';
 
 export default function MyTrips() {
@@ -67,8 +68,15 @@ export default function MyTrips() {
         <div className="mytrips-list">
           {filtered.map((trip, i) => (
             <div key={trip.id} className={`mytrip-card animate-in animate-in-delay-${Math.min(i + 2, 8)}`}>
-              <div className="mytrip-cover" style={{ background: `linear-gradient(135deg, ${statusConfig[trip.status]?.bg || '#1A5653'}15, transparent)` }}>
-                <span className="mytrip-emoji">{trip.coverEmoji}</span>
+              <div 
+                className="mytrip-cover" 
+                style={{ 
+                  backgroundImage: `linear-gradient(rgba(28,25,23,0.3), rgba(28,25,23,0.7)), url(${getCityImageUrl(trip.cities[0], 400, 300)})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
+              >
+                <span className="mytrip-emoji" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>{trip.coverEmoji}</span>
               </div>
               <div className="mytrip-body">
                 <div className="mytrip-top">
