@@ -332,6 +332,10 @@
 }
 .auth-footer a:hover { color: var(--terracotta-dark); text-decoration: underline; }
 
+.auth-extras { display: flex; justify-content: flex-end; margin-top: calc(-1 * var(--space-sm)); }
+.forgot-link { font-size: var(--text-xs); color: var(--terracotta); font-weight: 600; text-decoration: none; transition: color var(--t-fast); }
+.forgot-link:hover { color: var(--terracotta-dark); text-decoration: underline; }
+
 /* Passport Stamp — More dramatic animation */
 .auth-decoration {
   display: flex;

@@ -6,6 +6,15 @@ import './Pages.css';
 export default function CreateTrip() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', place: '', startDate: '', endDate: '', description: '', coverEmoji: '🌍' });
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleAIGenerate = () => {
+    setIsGenerating(true);
+    setTimeout(() => {
+      setIsGenerating(false);
+      navigate('/trips/t1/itinerary/build?ai=true');
+    }, 2500);
+  };
 
   const emojis = ['🗼', '🌴', '🏔️', '🏖️', '⛩️', '🌍', '🏛️', '🗾', '🏙️', '⛰️', '🎭', '🌄'];
 
@@ -92,9 +101,33 @@ export default function CreateTrip() {
           </div>
         </div>
 
-        <button className="btn btn-primary btn-full animate-in animate-in-delay-4" onClick={() => navigate('/trips/t1/itinerary/build')}>
-          Continue to Itinerary <ArrowRight size={16} />
-        </button>
+        <div className="create-trip-actions animate-in animate-in-delay-4" style={{ display: 'flex', gap: 'var(--space-md)', flexDirection: 'column' }}>
+          <button 
+            className="btn btn-primary btn-full" 
+            onClick={() => navigate('/trips/t1/itinerary/build')}
+            disabled={isGenerating}
+          >
+            Continue to Itinerary <ArrowRight size={16} />
+          </button>
+          
+          <button 
+            className="btn btn-full ai-generate-btn" 
+            onClick={handleAIGenerate}
+            disabled={isGenerating}
+            style={{ 
+              background: 'linear-gradient(135deg, var(--gold), #E8B451)', 
+              color: 'var(--charcoal)',
+              border: 'none',
+              fontWeight: 700
+            }}
+          >
+            {isGenerating ? (
+              <><Sparkles size={16} className="spin-slow" /> Generating Itinerary...</>
+            ) : (
+              <><Sparkles size={16} /> Magic Plan with AI</>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

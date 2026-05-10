@@ -1,7 +1,16 @@
-import { DollarSign, TrendingUp, AlertTriangle, PieChart, BarChart3 } from 'lucide-react';
+import { useState } from 'react';
+import { DollarSign, TrendingUp, AlertTriangle, PieChart, BarChart3, Sparkles, Loader, Check } from 'lucide-react';
 import { trips, invoiceData } from '../data/mockData';
 import { Link } from 'react-router-dom';
 import './Pages.css';
+
+const aiSuggestions = [
+  { id: 1, text: 'Switch Rome hotel from 4-star to boutique B&B', savings: 320, impact: 'low', accepted: false },
+  { id: 2, text: 'Book Rome→Florence train instead of flight', savings: 85, impact: 'low', accepted: false },
+  { id: 3, text: 'Use Roma Pass for Colosseum + Vatican (bundle discount)', savings: 45, impact: 'none', accepted: false },
+  { id: 4, text: 'Replace 2 restaurant dinners with highly-rated trattorias', savings: 60, impact: 'none', accepted: false },
+  { id: 5, text: 'Book Uffizi tickets in advance (skip-the-line saves time + money)', savings: 25, impact: 'none', accepted: false },
+];
 
 export default function TripBudget() {
   const trip = trips[0];
@@ -10,6 +19,21 @@ export default function TripBudget() {
   const remaining = budget - spent;
   const isOver = remaining < 0;
   const pct = Math.min((spent / budget) * 100, 100);
+
+  const [showAI, setShowAI] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState(aiSuggestions);
+
+  const handleAIAnalyze = () => {
+    setLoading(true);
+    setTimeout(() => { setLoading(false); setShowAI(true); }, 2000);
+  };
+
+  const acceptSuggestion = (id) => {
+    setSuggestions(prev => prev.map(s => s.id === id ? { ...s, accepted: !s.accepted } : s));
+  };
+
+  const totalSavings = suggestions.filter(s => s.accepted).reduce((sum, s) => sum + s.savings, 0);
 
   const categories = [
     { name: 'Hotels', amount: 9000, color: 'var(--terracotta)', pct: 39 },
@@ -34,8 +58,44 @@ export default function TripBudget() {
             <h1>Trip Budget</h1>
             <p>{trip.name} · {trip.cities.length} cities</p>
           </div>
-          <Link to={`/trips/${trip.id}/invoice`} className="btn btn-secondary"><DollarSign size={14} /> View Invoice</Link>
+          <div style={{ display: 'flex', gap: 'var(--space-md)' }}>
+            {!showAI && (
+              <button className="btn" onClick={handleAIAnalyze} disabled={loading} style={{ background: 'linear-gradient(135deg, var(--gold), #E8B451)', color: 'var(--charcoal)', border: 'none', fontWeight: 700 }}>
+                {loading ? <><Loader size={14} className="spin-slow" /> Analyzing...</> : <><Sparkles size={14} /> AI Budget Savior</>}
+              </button>
+            )}
+            <Link to={`/trips/${trip.id}/invoice`} className="btn btn-secondary"><DollarSign size={14} /> View Invoice</Link>
+          </div>
         </div>
+
+        {/* AI Budget Savior Panel */}
+        {showAI && (
+          <div className="card animate-in" style={{ borderLeft: '3px solid var(--gold)', marginBottom: 'var(--space-2xl)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
+              <Sparkles size={20} color="var(--gold)" />
+              <div>
+                <h4 style={{ margin: 0 }}>AI Budget Savior</h4>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--warm-gray)' }}>Smart suggestions to optimize your spending</span>
+              </div>
+              {totalSavings > 0 && (
+                <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'var(--text-xl)', color: 'var(--sage)' }}>
+                  Save ${totalSavings}
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+              {suggestions.map(s => (
+                <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', padding: 'var(--space-md) var(--space-lg)', background: s.accepted ? 'rgba(94,140,98,0.06)' : 'rgba(28,25,23,0.02)', borderRadius: 'var(--radius-md)', border: `1px solid ${s.accepted ? 'rgba(94,140,98,0.2)' : 'rgba(28,25,23,0.04)'}`, transition: 'all 0.2s' }}>
+                  <button onClick={() => acceptSuggestion(s.id)} style={{ width: 28, height: 28, borderRadius: 'var(--radius-sm)', background: s.accepted ? 'var(--sage)' : 'transparent', border: s.accepted ? 'none' : '2px solid rgba(28,25,23,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s' }}>
+                    {s.accepted && <Check size={14} />}
+                  </button>
+                  <span style={{ flex: 1, fontSize: 'var(--text-sm)', textDecoration: s.accepted ? 'line-through' : 'none', color: s.accepted ? 'var(--warm-gray)' : 'var(--charcoal)' }}>{s.text}</span>
+                  <span style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--sage)', whiteSpace: 'nowrap' }}>-${s.savings}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Budget Summary Cards */}
         <div className="budget-summary animate-in animate-in-delay-1">
@@ -51,7 +111,8 @@ export default function TripBudget() {
             <span className="budget-stat-label">{isOver ? 'Over Budget' : 'Remaining'}</span>
             <span className={`budget-stat-value ${isOver ? 'danger' : 'success'}`}>
               {isOver && <AlertTriangle size={16} />}
-              ${Math.abs(remaining).toLocaleString()}
+              ${Math.abs(remaining - totalSavings).toLocaleString()}
+              {totalSavings > 0 && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--sage)' }}> (AI saved ${totalSavings})</span>}
             </span>
           </div>
           <div className="budget-stat-card">
@@ -61,12 +122,12 @@ export default function TripBudget() {
         </div>
 
         {/* Over Budget Alert */}
-        {isOver && (
+        {isOver && !showAI && (
           <div className="budget-alert animate-in animate-in-delay-2">
             <AlertTriangle size={18} />
             <div>
               <strong>Over budget by ${Math.abs(remaining).toLocaleString()}</strong>
-              <p>Consider adjusting activities or accommodation to stay within your planned budget.</p>
+              <p>Click "AI Budget Savior" above to get smart suggestions for cutting costs without sacrificing experiences.</p>
             </div>
           </div>
         )}
@@ -83,7 +144,6 @@ export default function TripBudget() {
         </div>
 
         <div className="budget-grid">
-          {/* Category Breakdown */}
           <div className="card animate-in animate-in-delay-3">
             <h4><PieChart size={16} /> Spending by Category</h4>
             <div className="category-breakdown">
@@ -101,7 +161,6 @@ export default function TripBudget() {
             </div>
           </div>
 
-          {/* Daily Cost */}
           <div className="card animate-in animate-in-delay-4">
             <h4><BarChart3 size={16} /> Daily Spending</h4>
             <div className="daily-chart">
